@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp Click-to-Send</title>
+<style>
+  :root {
+    --bg: #0f1614;
+    --panel: #17211e;
+    --panel2: #1e2b27;
+    --border: #2a3a35;
+    --text: #e6efeb;
+    --muted: #8fa39c;
+    --green: #25d366;
+    --green-dark: #1da851;
+    --sent: #3a4d47;
+    --amber: #e6b84a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Color Emoji", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 24px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  textarea, select {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+  }
+  select { width: auto; padding: 8px 12px; }
+  textarea#message { min-height: 200px; }
+  textarea#numbers { min-height: 120px; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  button {
+    background: var(--green);
+    color: #04130c;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button:hover { background: var(--green-dark); }
+  button.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  button.secondary:hover { background: var(--border); }
+  .stats { color: var(--muted); font-size: 13px; margin-left: auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr.sent td { color: var(--sent); }
+  .act { display: flex; gap: 8px; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; text-decoration: none; display: inline-block; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; }
+  .btn-copy { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  .btn-copy.copied { background: #1a3a2a; color: var(--green); border-color: var(--green); }
+  .btn-open { background: var(--green); color: #04130c; }
+  tr.sent .btn-open { background: var(--sent); color: #0f1614; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--panel2); color: var(--muted); white-space: nowrap; }
+  .badge.ok { background: #1a3a2a; color: var(--green); }
+  .badge.bad { background: #3a1a1a; color: #ff6b6b; }
+  .badge.country { background: #1a2a3a; color: #8ac0e6; }
+  .num-cell { font-variant-numeric: tabular-nums; }
+  .warn { background: #2a2416; border: 1px solid #4a3d1a; color: #e6d9a3; padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; }
+  .info { background: #16242a; border: 1px solid #1a3a4a; color: #a3d4e6; padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; }
+  code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  .filterbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .summary { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  .chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: var(--panel2); border: 1px solid var(--border); color: var(--text); }
+  .chip.flag { background: #3a1a1a; color: #ff9b9b; border-color: #5a2a2a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>WhatsApp Click-to-Send</h1>
+  <div class="sub">International-ready. Detects country by dialing code, groups your list, and flags numbers missing a code before you send.</div>
+
+  <div class="info">
+    <b>Flow per person:</b> <b>Copy message</b> &rarr; <b>Open chat</b> &rarr; click the message box &rarr; <code>Ctrl+V</code> &rarr; Enter. Copy-paste keeps emojis intact (pre-filled links corrupt them).
+  </div>
+
+  <div class="warn">
+    <b>The international trap:</b> a number MUST include its country code, no <code>+</code>. Kazakhstan <code>7701...</code>, US <code>1202...</code>, India <code>9198...</code>, UAE <code>97150...</code>. A number saved in local format (e.g. Kazakh <code>8701...</code> or a bare US <code>202...</code>) can't be auto-fixed and gets flagged <span class="badge bad">no country code</span>. Fix those by hand before sending or the message goes nowhere, or to a stranger.
+  </div>
+
+  <div class="card">
+    <label for="message">Message (use {name} to personalize)</label>
+    <textarea id="message">&#128075; Hi {name},
+
+Quick note from our team — replace this text with your own message.
+
+&#128197; Anything you paste here is sent as-is, so links, emojis and line breaks all work:
+https://example.com
+
+&#9989; Use {name} anywhere in the message and it gets swapped for each recipient's name (or "there" if you left the name blank).
+
+Best regards,
+Your Name</textarea>
+  </div>
+
+  <div class="card">
+    <label for="numbers">Recipients (one per line: <code>number,name</code> &mdash; name optional)</label>
+    <textarea id="numbers" placeholder="77011234567,Aigerim">77011234567,Aigerim
+12025551234,John
+919812345678,Priya
+971501234567,Ahmed
+8701234567,BadNumber</textarea>
+    <div class="row">
+      <button onclick="build()">Build list</button>
+      <button class="secondary" onclick="resetSent()">Reset sent marks</button>
+      <span class="stats" id="stats"></span>
+    </div>
+  </div>
+
+  <div class="card" id="listCard" style="display:none;">
+    <div class="summary" id="summary"></div>
+    <div class="filterbar">
+      <label style="margin:0;">Filter by country</label>
+      <select id="countryFilter" onchange="render()"></select>
+      <label style="margin:0;">Sort</label>
+      <select id="sortBy" onchange="render()">
+        <option value="country">Country, then name</option>
+        <option value="name">Name</option>
+        <option value="input">Original order</option>
+      </select>
+    </div>
+    <table id="tbl">
+      <thead>
+        <tr><th>#</th><th>Number</th><th>Country</th><th>Name</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // Dialing codes. Longest-prefix match wins so 971 beats 97 beats 9.
+  // Not exhaustive but covers the big ones. Add more as needed.
+  const DIAL_CODES = [
+    ["1","US/Canada"],["7","Russia/Kazakhstan"],["20","Egypt"],["27","South Africa"],
+    ["30","Greece"],["31","Netherlands"],["32","Belgium"],["33","France"],["34","Spain"],
+    ["36","Hungary"],["39","Italy"],["40","Romania"],["41","Switzerland"],["43","Austria"],
+    ["44","UK"],["45","Denmark"],["46","Sweden"],["47","Norway"],["48","Poland"],["49","Germany"],
+    ["51","Peru"],["52","Mexico"],["53","Cuba"],["54","Argentina"],["55","Brazil"],["56","Chile"],
+    ["57","Colombia"],["58","Venezuela"],["60","Malaysia"],["61","Australia"],["62","Indonesia"],
+    ["63","Philippines"],["64","New Zealand"],["65","Singapore"],["66","Thailand"],["81","Japan"],
+    ["82","South Korea"],["84","Vietnam"],["86","China"],["90","Turkey"],["91","India"],
+    ["92","Pakistan"],["93","Afghanistan"],["94","Sri Lanka"],["95","Myanmar"],["98","Iran"],
+    ["212","Morocco"],["213","Algeria"],["216","Tunisia"],["218","Libya"],["220","Gambia"],
+    ["221","Senegal"],["233","Ghana"],["234","Nigeria"],["251","Ethiopia"],["254","Kenya"],
+    ["255","Tanzania"],["256","Uganda"],["260","Zambia"],["263","Zimbabwe"],["351","Portugal"],
+    ["352","Luxembourg"],["353","Ireland"],["354","Iceland"],["355","Albania"],["358","Finland"],
+    ["359","Bulgaria"],["370","Lithuania"],["371","Latvia"],["372","Estonia"],["374","Armenia"],
+    ["375","Belarus"],["380","Ukraine"],["381","Serbia"],["385","Croatia"],["386","Slovenia"],
+    ["387","Bosnia"],["389","N. Macedonia"],["420","Czechia"],["421","Slovakia"],["423","Liechtenstein"],
+    ["852","Hong Kong"],["853","Macau"],["855","Cambodia"],["856","Laos"],["880","Bangladesh"],
+    ["886","Taiwan"],["960","Maldives"],["961","Lebanon"],["962","Jordan"],["963","Syria"],
+    ["964","Iraq"],["965","Kuwait"],["966","Saudi Arabia"],["967","Yemen"],["968","Oman"],
+    ["971","UAE"],["972","Israel"],["973","Bahrain"],["974","Qatar"],["975","Bhutan"],
+    ["976","Mongolia"],["977","Nepal"],["992","Tajikistan"],["993","Turkmenistan"],
+    ["994","Azerbaijan"],["995","Georgia"],["996","Kyrgyzstan"],["998","Uzbekistan"]
+  ];
+  // Sort by length desc so longest prefix is tested first.
+  const CODES_SORTED = [...DIAL_CODES].sort((a,b) => b[0].length - a[0].length);
+
+  function detectCountry(number) {
+    // number is digits only. Try longest prefixes first.
+    for (const [code, name] of CODES_SORTED) {
+      if (number.startsWith(code)) {
+        // Special case: +7 is shared. 77x = Kazakhstan, 79x/74x/78x etc = Russia.
+        if (code === "7") {
+          if (number.startsWith("77")) return "Kazakhstan";
+          return "Russia";
+        }
+        return name;
+      }
+    }
+    return null;
+  }
+
+  let sent = {};
+  let parsed = []; // full parsed list, rebuilt on Build
+
+  function cleanNumber(raw) { return raw.replace(/[^\d]/g, ""); }
+
+  function parseLines() {
+    const lines = document.getElementById("numbers").value.split("\n");
+    const out = [];
+    lines.forEach((line, idx) => {
+      const t = line.trim();
+      if (!t) return;
+      const parts = t.split(",");
+      const number = cleanNumber(parts[0] || "");
+      const name = (parts[1] || "").trim();
+      const country = detectCountry(number);
+      // Valid = plausible length AND a country code we recognize.
+      const goodLength = number.length >= 8 && number.length <= 15;
+      const valid = goodLength && country !== null;
+      out.push({
+        inputOrder: idx,
+        raw: (parts[0] || "").trim(),
+        number, name,
+        country: country || "Unknown",
+        valid,
+        reason: !goodLength ? "bad length" : (country === null ? "no country code" : "")
+      });
+    });
+    return out;
+  }
+
+  async function copyMessage(msg, btn) {
+    try {
+      await navigator.clipboard.writeText(msg);
+      showCopied(btn);
+    } catch (e) {
+      const ta = document.createElement("textarea");
+      ta.value = msg; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand("copy"); showCopied(btn); }
+      catch(e2){ alert("Couldn't auto-copy:\n\n"+msg); }
+      document.body.removeChild(ta);
+    }
+  }
+  function showCopied(btn){
+    btn.textContent="Copied ✓"; btn.classList.add("copied");
+    setTimeout(()=>{btn.textContent="Copy message"; btn.classList.remove("copied");},2500);
+  }
+
+  function build() {
+    parsed = parseLines();
+
+    // Populate country filter dropdown.
+    const countries = {};
+    parsed.forEach(p => { const c = p.valid ? p.country : "⚠ Flagged"; countries[c] = (countries[c]||0)+1; });
+    const filter = document.getElementById("countryFilter");
+    filter.innerHTML = '<option value="__all">All countries (' + parsed.length + ')</option>';
+    Object.keys(countries).sort().forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c; opt.textContent = c + " (" + countries[c] + ")";
+      filter.appendChild(opt);
+    });
+
+    // Summary chips.
+    const summary = document.getElementById("summary");
+    summary.innerHTML = "";
+    const flagged = parsed.filter(p => !p.valid).length;
+    const validCount = parsed.length - flagged;
+    const chip = document.createElement("span");
+    chip.className = "chip"; chip.textContent = validCount + " ready to send";
+    summary.appendChild(chip);
+    if (flagged > 0) {
+      const fc = document.createElement("span");
+      fc.className = "chip flag"; fc.textContent = flagged + " flagged (fix before sending)";
+      summary.appendChild(fc);
+    }
+    const byCountry = {};
+    parsed.filter(p=>p.valid).forEach(p => byCountry[p.country]=(byCountry[p.country]||0)+1);
+    Object.keys(byCountry).sort((a,b)=>byCountry[b]-byCountry[a]).slice(0,8).forEach(c=>{
+      const cc = document.createElement("span");
+      cc.className="chip"; cc.textContent = c + ": " + byCountry[c];
+      summary.appendChild(cc);
+    });
+
+    document.getElementById("listCard").style.display = "block";
+    render();
+  }
+
+  function render() {
+    const template = document.getElementById("message").value;
+    const filterVal = document.getElementById("countryFilter").value;
+    const sortBy = document.getElementById("sortBy").value;
+
+    let rows = parsed.slice();
+    if (filterVal === "⚠ Flagged") rows = rows.filter(p => !p.valid);
+    else if (filterVal !== "__all") rows = rows.filter(p => p.valid && p.country === filterVal);
+
+    if (sortBy === "country") rows.sort((a,b)=> (a.country+a.name).localeCompare(b.country+b.name));
+    else if (sortBy === "name") rows.sort((a,b)=> (a.name||"~").localeCompare(b.name||"~"));
+    else rows.sort((a,b)=> a.inputOrder - b.inputOrder);
+
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+
+    rows.forEach((p, i) => {
+      const tr = document.createElement("tr");
+      const key = p.number || ("row"+p.inputOrder);
+      if (sent[key]) tr.classList.add("sent");
+
+      const msg = template.replace(/\{name\}/g, p.name || "there");
+      const openUrl = "https://wa.me/" + p.number;
+
+      const idxCell = document.createElement("td"); idxCell.textContent = i+1;
+      const numCell = document.createElement("td"); numCell.className="num-cell"; numCell.textContent = p.number || p.raw;
+      const ctryCell = document.createElement("td");
+      ctryCell.innerHTML = p.valid ? '<span class="badge country">'+p.country+'</span>' : '<span class="badge bad">'+p.reason+'</span>';
+      const nameCell = document.createElement("td");
+      if (p.name) nameCell.textContent = p.name; else nameCell.innerHTML='<span style="color:var(--muted)">(none)</span>';
+      const statusCell = document.createElement("td");
+      statusCell.innerHTML = p.valid ? '<span class="badge ok">ok</span>' : '<span class="badge bad">skip</span>';
+
+      tr.appendChild(idxCell); tr.appendChild(numCell); tr.appendChild(ctryCell);
+      tr.appendChild(nameCell); tr.appendChild(statusCell);
+
+      const actCell = document.createElement("td");
+      if (p.valid) {
+        const copyBtn = document.createElement("button");
+        copyBtn.className="btn-sm btn-copy"; copyBtn.textContent="Copy message";
+        copyBtn.onclick = () => copyMessage(msg, copyBtn);
+        const openLink = document.createElement("a");
+        openLink.className="btn-sm btn-open"; openLink.textContent="Open chat";
+        openLink.href=openUrl; openLink.target="_blank";
+        openLink.onclick = () => { sent[key]=true; tr.classList.add("sent"); updateStats(); };
+        const wrap = document.createElement("div"); wrap.className="act";
+        wrap.appendChild(copyBtn); wrap.appendChild(openLink);
+        actCell.appendChild(wrap);
+      } else {
+        actCell.innerHTML = '<span style="color:var(--muted);font-size:13px;">fix number first</span>';
+      }
+      tr.appendChild(actCell);
+      tbody.appendChild(tr);
+    });
+
+    updateStats();
+  }
+
+  function updateStats() {
+    const total = parsed.filter(p=>p.valid).length;
+    const sentCount = parsed.filter(p=>p.valid && sent[p.number]).length;
+    document.getElementById("stats").textContent = sentCount + " / " + total + " sent";
+  }
+
+  function resetSent() { sent = {}; if (parsed.length) render(); }
+</script>
+</body>
+</html>
